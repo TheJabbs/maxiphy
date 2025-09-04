@@ -1,0 +1,258 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model active_class {
+  active_class_id                    Int       @id @default(autoincrement())
+  class_code                         String?   @db.VarChar(10)
+  period                             Int?      @db.Year
+  class_coordinator                  Int?
+  Renamedclass                       classes?  @relation(fields: [class_code], references: [class_code], onDelete: NoAction, map: "active_class_ibfk_1")
+  period_active_class_periodToperiod period?   @relation("active_class_periodToperiod", fields: [period], references: [period], onDelete: Cascade, map: "active_class_ibfk_2")
+  employee                           employee? @relation(fields: [class_coordinator], references: [employee_id], onDelete: NoAction, map: "active_class_ibfk_3")
+
+  @@index([class_code], map: "class_code")
+  @@index([class_coordinator], map: "class_coordinator")
+  @@index([period], map: "period")
+}
+
+model agenda {
+  agenda_id        Int            @id @default(autoincrement())
+  subject_class_id Int?
+  agenda_title     String         @db.VarChar(50)
+  agenda_context   String         @db.Text
+  agenda_annouced  DateTime?      @default(dbgenerated("(curdate())")) @db.Date
+  agenda_due       DateTime?      @db.Date
+  subject_class    subject_class? @relation(fields: [subject_class_id], references: [subject_class_id], onDelete: Cascade, map: "agenda_ibfk_1")
+
+  @@index([subject_class_id], map: "subject_class_id")
+}
+
+model employee {
+  employee_id     Int             @id @default(autoincrement())
+  employee_fn     String          @db.VarChar(25)
+  employee_ln     String          @db.VarChar(25)
+  employee_dob    DateTime        @db.Date
+  employee_join   DateTime?       @default(dbgenerated("(curdate())")) @db.Date
+  employee_img    String?         @db.VarChar(250)
+  employee_info   String?         @db.Text
+  employee_degree String?         @db.VarChar(30)
+  employee_exp    DateTime?       @default(dbgenerated("(curdate())")) @db.Date
+  employee_sal1   Float           @default(0) @db.Float
+  employee_sal2   Float?          @default(0) @db.Float
+  employee_wh     Float?          @default(0) @db.Float
+  active_class    active_class[]
+  employee_role   employee_role[]
+  subject_class   subject_class[]
+}
+
+model employee_role {
+  employee_role_id Int      @id @default(autoincrement())
+  role_id          Int
+  employee_id      Int
+  roles            roles    @relation(fields: [role_id], references: [role_id], onDelete: Cascade, map: "employee_role_ibfk_1")
+  employee         employee @relation(fields: [employee_id], references: [employee_id], onDelete: Cascade, map: "employee_role_ibfk_2")
+
+  @@index([employee_id], map: "employee_id")
+  @@index([role_id], map: "role_id")
+}
+
+model final_grade {
+  final_grade_id Int                      @id @default(autoincrement())
+  subject_code   String?                  @db.VarChar(50)
+  final_grade    Float?                   @db.Float
+  student_id     String?                  @db.VarChar(8)
+  test_period    final_grade_test_period?
+  created_at     DateTime?                @default(now()) @db.Timestamp(0)
+  final_status   String?                  @default("B") @db.VarChar(3)
+  subjects       subjects?                @relation(fields: [subject_code], references: [subject_code], onDelete: Cascade, map: "final_grade_ibfk_1")
+  student        student?                 @relation(fields: [student_id], references: [student_id], onDelete: Cascade, map: "final_grade_ibfk_2")
+
+  @@index([student_id], map: "student_id")
+  @@index([subject_code], map: "subject_code")
+}
+
+model job {
+  job_id      Int     @id @default(autoincrement())
+  parent_id   Int
+  job_company String  @db.VarChar(100)
+  job_title   String  @db.VarChar(100)
+  work_email  String? @db.VarChar(100)
+  work_number String? @db.VarChar(100)
+  parent      parent  @relation(fields: [parent_id], references: [parent_id], onUpdate: Restrict, map: "parentfk")
+
+  @@index([parent_id], map: "parentfk_idx")
+}
+
+model parent {
+  parent_id                         Int       @id @default(autoincrement())
+  parent_fn                         String    @db.VarChar(100)
+  parent_ln                         String    @db.VarChar(100)
+  parent_dob                        DateTime  @db.Date
+  parent_pers_number                String    @db.VarChar(100)
+  parent_pers_email                 String?   @db.VarChar(100)
+  job                               job[]
+  student_student_father_idToparent student[] @relation("student_father_idToparent")
+  student_student_mother_idToparent student[] @relation("student_mother_idToparent")
+}
+
+model period {
+  period                                   Int            @id @db.Year
+  period_status                            String         @db.VarChar(3)
+  active_class_active_class_periodToperiod active_class[] @relation("active_class_periodToperiod")
+}
+
+model roles {
+  role_id          Int             @id @default(autoincrement())
+  role_name        String          @db.VarChar(30)
+  role_description String?         @db.Text
+  employee_role    employee_role[]
+}
+
+model school_email {
+  school_num_id      Int         @id @default(autoincrement())
+  school_reg         Int
+  school_email       String      @db.VarChar(100)
+  school_email_label String      @db.VarChar(250)
+  school_info        school_info @relation(fields: [school_reg], references: [school_reg], onDelete: NoAction, onUpdate: NoAction, map: "school_email_ibfk_1")
+
+  @@index([school_reg], map: "school_reg")
+}
+
+model school_info {
+  school_reg     Int            @id
+  school_name    String         @db.VarChar(100)
+  school_address String         @db.VarChar(250)
+  school_lat     Float
+  school_long    Float
+  school_princ   String         @db.VarChar(100)
+  school_email   school_email[]
+  school_num     school_num[]
+}
+
+model school_num {
+  school_num_id      Int         @id @default(autoincrement())
+  school_reg         Int
+  school_phone       String      @db.VarChar(100)
+  school_phone_label String      @db.VarChar(250)
+  school_info        school_info @relation(fields: [school_reg], references: [school_reg], onDelete: NoAction, onUpdate: NoAction, map: "school_num_ibfk_1")
+
+  @@index([school_reg], map: "school_reg")
+}
+
+model student {
+  student_id                       String        @id @db.VarChar(8)
+  mother_id                        Int
+  father_id                        Int
+  student_fname                    String        @db.VarChar(25)
+  student_lname                    String        @db.VarChar(25)
+  student_dob                      DateTime      @db.Date
+  student_account                  String        @db.VarChar(100)
+  student_pass                     String        @db.VarChar(250)
+  note                             String?       @db.Text
+  final_grade                      final_grade[]
+  parent_student_father_idToparent parent        @relation("student_father_idToparent", fields: [father_id], references: [parent_id], onDelete: NoAction, onUpdate: NoAction, map: "ffk")
+  parent_student_mother_idToparent parent        @relation("student_mother_idToparent", fields: [mother_id], references: [parent_id], onDelete: NoAction, onUpdate: NoAction, map: "mfk")
+  test_result                      test_result[]
+
+  @@index([father_id], map: "ffk_idx")
+  @@index([mother_id], map: "mfk_idx")
+}
+
+model subject_class {
+  subject_class_id Int       @id @default(autoincrement())
+  subject_code     String    @db.VarChar(50)
+  instructor       Int?
+  agenda           agenda[]
+  employee         employee? @relation(fields: [instructor], references: [employee_id], onDelete: Cascade, map: "subject_class_ibfk_1")
+  subjects         subjects  @relation(fields: [subject_code], references: [subject_code], onDelete: NoAction, map: "subject_class_ibfk_2")
+  test             test[]
+
+  @@index([instructor], map: "instructor")
+  @@index([subject_code], map: "subject_code")
+}
+
+model subjects {
+  subject_code  String                @id @db.VarChar(50)
+  subject_name  String                @db.VarChar(100)
+  subject_cat   subjects_subject_cat?
+  final_grade   final_grade[]
+  subject_class subject_class[]
+}
+
+model test {
+  test_id          Int               @id @default(autoincrement())
+  test_title       String?           @db.VarChar(50)
+  test_description String?           @db.Text
+  subject_class_id Int?
+  test_total       Int?
+  test_visibility  String?           @default("H") @db.VarChar(3)
+  test_annouced    DateTime?         @default(dbgenerated("(curdate())")) @db.Date
+  test_due         DateTime?         @default(dbgenerated("(curdate())")) @db.Date
+  test_period      test_test_period?
+  subject_class    subject_class?    @relation(fields: [subject_class_id], references: [subject_class_id], onDelete: Cascade, map: "test_ibfk_1")
+  test_result      test_result[]
+
+  @@index([subject_class_id], map: "subject_class_id")
+}
+
+model test_result {
+  test_result_id Int      @id @default(autoincrement())
+  test_id        Int
+  student_id     String?  @db.VarChar(8)
+  test_result    Float    @default(0) @db.Float
+  test_note      String?  @db.Text
+  test           test     @relation(fields: [test_id], references: [test_id], onDelete: Cascade, map: "test_result_ibfk_1")
+  student        student? @relation(fields: [student_id], references: [student_id], onDelete: Cascade, map: "test_result_ibfk_2")
+
+  @@index([student_id], map: "student_id")
+  @@index([test_id], map: "test_id")
+}
+
+model classes {
+  class_code   String         @id @db.VarChar(10)
+  class_name   String?        @db.VarChar(100)
+  class_base   String?        @db.VarChar(10)
+  active_class active_class[]
+}
+
+model parent_form {
+  parent_form_id      Int       @id @default(autoincrement())
+  parent_form_content Bytes     @db.Blob
+  parent_form_created DateTime? @default(now()) @db.DateTime(0)
+}
+
+enum subjects_subject_cat {
+  Scientific
+  Literature
+  Activity
+  Other
+}
+
+enum final_grade_test_period {
+  c1
+  e1
+  c2
+  e2
+  c3
+  e3
+  c4
+  e4
+}
+
+enum test_test_period {
+  c1
+  e1
+  c2
+  e2
+  c3
+  e3
+  c4
+  e4
+}

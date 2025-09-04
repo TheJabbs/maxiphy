@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tasks {
+  taskId           Int       @id @default(autoincrement())
+  taskName         String    @db.VarChar(20)
+  taskDescription  String?   @db.VarChar(250)
+  taskPinned       Boolean?  @default(false)
+  taskPriority     Int?      @default(10)
+  taskCreation     DateTime? @default(now()) @db.Timestamp(6)
+  taskStart        DateTime  @db.Timestamp(6)
+  taskFinish       DateTime? @db.Timestamp(6)
+  progressMax      Int?
+  progress         Int?
+  taskAccomplished DateTime? @db.Timestamp(6)
+  lastProgress     DateTime? @db.Timestamp(6)
+
+  userId Int
+  user   Users @relation(fields: [userId], references: [userId])
+}
+
+model Users {
+  userId       Int      @id @default(autoincrement())
+  userName     String   @db.VarChar(30)
+  userEmail    String   @unique(map: "userEmail") @db.VarChar(30)
+  userPhone    String   @unique(map: "userPhone") @db.VarChar(30)
+  userPassword String
+  userCreation DateTime @default(now()) @db.Timestamptz(6)
+
+  tasks Tasks[]
+}
+
+model ErrorLog {
+  id         Int      @id @default(autoincrement())
+  timestamp  DateTime @default(now())
+  service    String
+  method     String
+  message    String
+  stackTrace String?
+  metadata   Json?
+}
